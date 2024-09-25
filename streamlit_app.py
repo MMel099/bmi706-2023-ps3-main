@@ -1,11 +1,8 @@
-source .venv/bin/activate
-
 import altair as alt
 import pandas as pd
 import streamlit as st
 
 ### P1.2 ###
-
 
 @st.cache_data
 def load_data():
