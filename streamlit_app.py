@@ -41,14 +41,21 @@ st.write("## Age-specific cancer mortality rates")
 
 ### P2.1 ###
 # replace with st.slider
-year = 2012
+min_year = int(df["Year"].min())
+max_year = int(df["Year"].max())
+
+year = st.slider("Select Year", min_value=min_year, max_value=max_year, value=2012)
 subset = df[df["Year"] == year]
 ### P2.1 ###
 
 
 ### P2.2 ###
 # replace with st.radio
-sex = "M"
+sex = st.radio(
+    "Choose Sex",
+    options=["M", "F"],
+    format_func=lambda x: "Male" if x == "M" else "Female")
+
 subset = subset[subset["Sex"] == sex]
 ### P2.2 ###
 
@@ -56,22 +63,32 @@ subset = subset[subset["Sex"] == sex]
 ### P2.3 ###
 # replace with st.multiselect
 # (hint: can use current hard-coded values below as as `default` for selector)
-countries = [
-    "Austria",
-    "Germany",
-    "Iceland",
-    "Spain",
-    "Sweden",
-    "Thailand",
-    "Turkey",
-]
+all_countries = df["Country"].unique().tolist()
+countries = st.multiselect(
+    "Select Countries", 
+    options=all_countries, 
+    default=[
+        "Austria", 
+        "Germany", 
+        "Iceland", 
+        "Spain", 
+        "Sweden", 
+        "Thailand", 
+        "Turkey"
+    ]
+)
 subset = subset[subset["Country"].isin(countries)]
 ### P2.3 ###
 
 
 ### P2.4 ###
 # replace with st.selectbox
-cancer = "Malignant neoplasm of stomach"
+all_cancers = df["Cancer"].unique().tolist()
+cancer = st.selectbox(
+    "Select Cancer Type", 
+    options=all_cancers, 
+    index=all_cancers.index("Leukaemia") 
+)
 subset = subset[subset["Cancer"] == cancer]
 ### P2.4 ###
 
@@ -88,22 +105,39 @@ ages = [
     "Age >64",
 ]
 
-chart = alt.Chart(subset).mark_bar().encode(
-    x=alt.X("Age", sort=ages),
-    y=alt.Y("Rate", title="Mortality rate per 100k"),
-    color="Country",
-    tooltip=["Rate"],
+chart = alt.Chart(subset).mark_rect().encode(
+    x=alt.X('Age:O', sort=ages),
+    y='Country:O',
+    color=alt.Color('Rate:Q', 
+        scale=alt.Scale(
+        type='log', 
+        base=10,
+        domain=[0.01, 1000],
+        clamp=True
+        ), 
+        legend=alt.Legend(title="Cancer Mortality rate per 100k")
+    )
 ).properties(
-    title=f"{cancer} mortality rates for {'males' if sex == 'M' else 'females'} in {year}",
+    title=f"{year} mortality rates from {cancer} in {'males' if sex == 'M' else 'females'}"
 )
-### P2.5 ###
 
 st.altair_chart(chart, use_container_width=True)
+
+# Bonus Question
+chart2 = alt.Chart(subset).mark_bar().encode(
+    y=alt.Y('Country:O', title='Country', sort='-x'),
+    x=alt.X('Pop:Q', title='Total Population'),
+    tooltip=['Country', 'Pop']
+).properties(
+    title='Populations of Countries of Interest'
+)
+
+st.altair_chart(chart2, use_container_width=True)
 
 countries_in_subset = subset["Country"].unique()
 if len(countries_in_subset) != len(countries):
     if len(countries_in_subset) == 0:
-        st.write("No data avaiable for given subset.")
+        st.write("No available data for countries of interest")
     else:
         missing = set(countries) - set(countries_in_subset)
-        st.write("No data available for " + ", ".join(missing) + ".")
+        st.write("No available data for " + ", ".join(missing))
